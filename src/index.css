@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'TT Norms Pro';
+  src: url('/fonts/tt-norms-pro-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'TT Norms Pro';
+  src: url('/fonts/tt-norms-pro-semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@theme {
+  --color-navy-base: #080c18;
+  --color-navy-card: #0d1426;
+  --color-navy-sidebar: #060912;
+  --color-navy-raised: #111e35;
+  --color-accent: #3b7bff;
+  --color-buy: #f5a623;
+  --color-gain: #22c55e;
+  --color-loss: #ef4444;
+  --color-chart: #06b6d4;
+
+  --font-sans: "TT Norms Pro", system-ui, sans-serif;
+  --font-weight-normal: 400;
+  --font-weight-medium: 600;
+
+  --letter-spacing-tight: -0.03em;
+  --letter-spacing-snug: -0.015em;
+
+  --max-width-content: 88rem;
+
+  --animate-price-up-flash: price-up 0.8s ease-out;
+  --animate-price-down-flash: price-down 0.8s ease-out;
+}
+
+@keyframes price-up {
+  0% { color: #22c55e; background-color: rgba(34, 197, 94, 0.15); }
+  100% { color: inherit; background-color: transparent; }
+}
+
+@keyframes price-down {
+  0% { color: #ef4444; background-color: rgba(239, 68, 68, 0.15); }
+  100% { color: inherit; background-color: transparent; }
+}
+
+html, body, #root, * {
+  font-family: 'TT Norms Pro', system-ui, sans-serif;
+}
+
+/* Custom CSS Helpers */
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.card {
+  background-color: #0d1426;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1rem;
+}
+
+.badge-pending {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background-color: rgba(250, 204, 21, 0.1);
+  color: #facc15;
+}
+
+.badge-approved {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.badge-rejected {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.btn-primary {
+  background-color: #3b7bff;
+  color: #ffffff;
+  border-radius: 9999px;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.btn-primary:hover {
+  background-color: rgba(59, 123, 255, 0.9);
+}
+
+.btn-ghost {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 9999px;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.btn-ghost:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Scrollbar Utility code context */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions to perform role checks
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // 1. Users collection
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(uid) || isAdmin();
+    }
+
+    // 2. Balances collection
+    match /balances/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      // Allow users to initialize or perform transaction updates themselves, and admins to apply adjustments
+      allow write: if isOwner(uid) || isAdmin();
+    }
+
+    // 3. Holdings assets subcollection nested inside holdings
+    match /holdings/{uid}/assets/{symbol} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid) || isAdmin();
+    }
+
+    // 4. Client trade orders ledger
+    match /orders/{orderId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // 5. Client monetary deposit/withdrawal transactions ledger
+    match /transactions/{txId} {
+      allow read: if isAdmin() || (isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid));
+      // Allow creating transactions if owned, or if admin processes
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    // 6. Security trade quotes (Equities & Cryptos listings)
+    match /assets/{symbol} {
+      allow read: if isAuthenticated();
+      // Admin writes, server-side Admin SDK actions bypass rules
+      allow write: if isAdmin();
+    }
+  }
+}

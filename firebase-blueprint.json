@@ -1,0 +1,117 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Information about a registered user",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Auth UID" },
+        "name": { "type": "string", "description": "Full display name" },
+        "email": { "type": "string", "description": "Email address" },
+        "photoURL": { "type": "string", "description": "User profile picture url" },
+        "country": { "type": "string", "description": "Country of residence" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "createdAt": { "type": "object", "description": "Firestore Timestamp when user was created" }
+      },
+      "required": ["uid", "name", "email", "country", "role", "createdAt"]
+    },
+    "UserBalance": {
+      "title": "UserBalance",
+      "description": "Trading balances of an investor",
+      "type": "object",
+      "properties": {
+        "available": { "type": "number", "description": "Available cash to trade or withdraw" },
+        "locked": { "type": "number", "description": "Cash locked in pending withdrawal requests" },
+        "total": { "type": "number", "description": "Sum of all historical deposits less withdrawals" },
+        "updatedAt": { "type": "object", "description": "Timestamp of last modification" }
+      },
+      "required": ["available", "locked", "total", "updatedAt"]
+    },
+    "Asset": {
+      "title": "Asset",
+      "description": "Financial stock or crypto asset with active prices",
+      "type": "object",
+      "properties": {
+        "symbol": { "type": "string", "description": "Unique capital symbol like TSLA, BTC" },
+        "name": { "type": "string", "description": "Company name or coin name" },
+        "type": { "type": "string", "enum": ["stock", "crypto"] },
+        "priceSource": { "type": "string", "enum": ["finnhub", "seeded"] },
+        "currentPrice": { "type": "number", "description": "Current asset cost in USD" },
+        "change24h": { "type": "number", "description": "Percent change in last 24h" },
+        "updatedAt": { "type": "object", "description": "Timestamp of last price update" }
+      },
+      "required": ["symbol", "name", "type", "priceSource", "currentPrice", "change24h", "updatedAt"]
+    },
+    "Holding": {
+      "title": "Holding",
+      "description": "Position owned in investor portfolio",
+      "type": "object",
+      "properties": {
+        "symbol": { "type": "string", "description": "Asset symbol" },
+        "units": { "type": "number", "description": "Number of units owned" },
+        "avgBuyPrice": { "type": "number", "description": "Average unit cost of purchase" },
+        "updatedAt": { "type": "object", "description": "Timestamp of last purchase or sale" }
+      },
+      "required": ["symbol", "units", "avgBuyPrice", "updatedAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A deposit or withdrawal movement of funds",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Transaction unique identifier" },
+        "userId": { "type": "string", "description": "ID of requesting user" },
+        "userName": { "type": "string", "description": "Display name of requesting user" },
+        "type": { "type": "string", "enum": ["deposit", "withdrawal"] },
+        "amount": { "type": "number", "description": "Note value of money requested" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "note": { "type": "string", "description": "User notes like transaction proof reference, bank details" },
+        "adminNote": { "type": "string", "description": "Reasoning for approval or rejection by admin" },
+        "createdAt": { "type": "object", "description": "Timestamp of request creation" }
+      },
+      "required": ["id", "userId", "userName", "type", "amount", "status", "note", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Trading buy or sell matching a real-time price snapshot",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "symbol": { "type": "string" },
+        "side": { "type": "string", "enum": ["buy", "sell"] },
+        "units": { "type": "number" },
+        "price": { "type": "number" },
+        "total": { "type": "number" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["id", "userId", "symbol", "side", "units", "price", "total", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "Collection of user profiles"
+    },
+    "/balances/{uid}": {
+      "schema": "UserBalance",
+      "description": "Collection of user financial balances"
+    },
+    "/assets/{symbol}": {
+      "schema": "Asset",
+      "description": "Active asset quotes"
+    },
+    "/holdings/{uid}/assets/{symbol}": {
+      "schema": "Holding",
+      "description": "Subcollection under user mapping direct asset holdings"
+    },
+    "/transactions/{txId}": {
+      "schema": "Transaction",
+      "description": "System-wide deposits and withdrawals requests"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Historical platform stock trade matching"
+    }
+  }
+}

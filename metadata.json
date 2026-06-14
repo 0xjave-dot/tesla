@@ -1,0 +1,6 @@
+{
+  "name": "Tesla Stock Investment",
+  "description": "A real-time trading platform for equities and cryptocurrencies, powered by live quote feeds, user portfolios and balance-adjustment admin reviews.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
