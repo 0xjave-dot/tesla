@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -88,9 +88,10 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 export default function App() {
+  const location = useLocation();
+
   useEffect(() => {
-    // Native implementation of AOS functionality to fix build issues while keeping animations
-    const observer = new IntersectionObserver((entries) => {
+    const intersectionObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('aos-animate');
@@ -98,10 +99,24 @@ export default function App() {
       });
     }, { threshold: 0.1 });
 
-    document.querySelectorAll('[data-aos]').forEach(el => observer.observe(el));
+    const scanAndObserve = () => {
+      document.querySelectorAll('[data-aos]').forEach(el => {
+        intersectionObserver.observe(el);
+      });
+    };
+
+    // Initial scan
+    scanAndObserve();
+
+    // Use MutationObserver to pick up elements that appear after loading states (essential for Portfolio/Markets)
+    const mutationObserver = new MutationObserver(scanAndObserve);
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
     
-    return () => observer.disconnect();
-  }, []);
+    return () => {
+      intersectionObserver.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, [location.pathname]);
 
   // Global styles for animations
   const animationStyles = useMemo(() => (
@@ -113,6 +128,10 @@ export default function App() {
       [data-aos="fade-up"] { transform: translateY(24px); }
       [data-aos="fade-left"] { transform: translateX(24px); }
       [data-aos="fade-right"] { transform: translateX(-24px); }
+      
+      [data-aos-delay="100"] { transition-delay: 100ms; }
+      [data-aos-delay="200"] { transition-delay: 200ms; }
+      [data-aos-delay="300"] { transition-delay: 300ms; }
       
       .aos-animate {
         opacity: 1 !important;

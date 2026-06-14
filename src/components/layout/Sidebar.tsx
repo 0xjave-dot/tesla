@@ -112,12 +112,15 @@ export default function Sidebar({ isAdminView = false, isOpen = false, onClose }
         {/* Brand logo container */}
         <div className="h-16 px-6 border-b border-white/[0.07] flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center font-bold text-white text-base shadow-lg shadow-accent/20">
-              T
-            </div>
+            <img 
+              src="https://i.ibb.co/7Jb1sW11/glowing-tesla-icon-stockcake-removebg-preview.png" 
+              alt="Tesla Logo" 
+              className="w-8 h-8 object-contain"
+              referrerPolicy="no-referrer"
+            />
             <div>
               <span className="text-white font-medium text-sm tracking-tight block">Tesla Stock Investment</span>
-              <span className="text-white/30 text-[9px] tracking-wider uppercase block">Investment Portal</span>
+              <span className="text-white/30 text-[9px] tracking-wider uppercase block"></span>
             </div>
           </div>
 
@@ -211,7 +214,7 @@ export default function Sidebar({ isAdminView = false, isOpen = false, onClose }
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-white/40 hover:text-white hover:bg-loss/15 transition group cursor-pointer"
         >
           <LogOut className="w-4 h-4 text-white/30 group-hover:text-loss transition" />
-          <span>Exit Platform</span>
+          <span>Logout</span>
         </button>
       </div>
     </aside>
