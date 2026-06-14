@@ -1,9 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { Loader2 } from 'lucide-react';
-import AOS from 'aos';
-import 'aos/dist/aos.css'; // Import AOS styles
 
 // Layouts
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -91,14 +89,42 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 export default function App() {
   useEffect(() => {
-    AOS.init({
-      duration: 800, // Animation duration
-      once: true,    // Whether animation should happen only once - while scrolling down
-    });
+    // Native implementation of AOS functionality to fix build issues while keeping animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('aos-animate');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('[data-aos]').forEach(el => observer.observe(el));
+    
+    return () => observer.disconnect();
   }, []);
 
+  // Global styles for animations
+  const animationStyles = useMemo(() => (
+    <style>{`
+      [data-aos] {
+        opacity: 0;
+        transition: all 0.8s ease-out;
+      }
+      [data-aos="fade-up"] { transform: translateY(24px); }
+      [data-aos="fade-left"] { transform: translateX(24px); }
+      [data-aos="fade-right"] { transform: translateX(-24px); }
+      
+      .aos-animate {
+        opacity: 1 !important;
+        transform: translate(0, 0) !important;
+      }
+    `}</style>
+  ), []);
+
   return (
-    <Routes>
+    <>
+      {animationStyles}
+      <Routes>
       {/* Public Pages */}
       <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -125,5 +151,6 @@ export default function App() {
       {/* Fallback routing */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

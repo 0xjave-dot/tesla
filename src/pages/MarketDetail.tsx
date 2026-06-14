@@ -249,10 +249,15 @@ export default function MarketDetail() {
         lastClose = close;
       }
 
-      items[items.length - 1] = {
-        time: 'Now',
-        price: parseFloat(activePrice.toFixed(2))
-      };
+      if (items.length > 0) {
+        const last = items[items.length - 1];
+        items[items.length - 1] = {
+          ...last,
+          time: 'Now',
+          close: parseFloat(activePrice.toFixed(2)),
+          price: parseFloat(activePrice.toFixed(2))
+        };
+      }
 
       setChartData(items);
       setChartLoading(false);
