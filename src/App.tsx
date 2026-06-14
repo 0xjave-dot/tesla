@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { Loader2 } from 'lucide-react';
+import AOS from 'aos';
+import 'aos/dist/aos.css'; // Import AOS styles
 
 // Layouts
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -88,6 +90,13 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 export default function App() {
+  useEffect(() => {
+    AOS.init({
+      duration: 800, // Animation duration
+      once: true,    // Whether animation should happen only once - while scrolling down
+    });
+  }, []);
+
   return (
     <Routes>
       {/* Public Pages */}

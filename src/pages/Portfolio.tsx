@@ -99,10 +99,10 @@ export default function Portfolio() {
   }
 
   return (
-    <div className="space-y-8 select-none">
+    <div className="space-y-8 select-none" data-aos="fade-up">
       {/* HEADER NET WORTH SCORE CARD */}
       <section className="bg-navy-card border border-white/[0.07] p-8 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-lg">
-        <div>
+        <div data-aos="fade-right" data-aos-delay="100">
           <span className="text-white/45 text-[10px] font-bold tracking-[0.2em] uppercase block">
             Net Valuation Breakdown
           </span>
@@ -129,7 +129,7 @@ export default function Portfolio() {
           </div>
         </div>
 
-        {/* Totals reference */}
+        {/* Totals reference */} 
         <div className="flex gap-8 md:gap-14 border-t md:border-t-0 md:border-l border-white/[0.07] pt-4 md:pt-0 md:pl-12 w-full md:w-auto">
           <div>
             <span className="text-white/40 text-[10px] uppercase font-bold tracking-wider block">Investment Cost</span>
@@ -154,7 +154,7 @@ export default function Portfolio() {
 
       {/* CORE COLUMNS GRID */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* HOLDINGS MATRIX TABLE (2/3) */}
+        {/* HOLDINGS MATRIX TABLE (2/3) */} 
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center gap-2 pl-1">
             <LayoutGrid className="w-4 h-4 text-white/35" />
@@ -257,7 +257,7 @@ export default function Portfolio() {
         </div>
 
         {/* PORTFOLIO ALLOCATION RECHARTS DONUT (1/3) */}
-        <div className="space-y-4">
+        <div className="space-y-4" data-aos="fade-left" data-aos-delay="200">
           <div className="flex items-center gap-2 pl-1">
             <Layers className="w-4 h-4 text-white/35" />
             <h4 className="text-white/40 text-[10px] font-bold tracking-widest uppercase">Asset Allocations</h4>

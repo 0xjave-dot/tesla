@@ -89,10 +89,10 @@ export default function Profile() {
   };
 
   return (
-    <div className="space-y-8 select-none">
+    <div className="space-y-8 select-none" data-aos="fade-up">
       {/* INTRO IDENTIFICATION HEADER */}
       <section className="bg-navy-card border border-white/[0.07] p-6 rounded-3xl flex flex-col sm:flex-row items-center gap-5 shadow-lg">
-        {currentUser?.photoURL ? (
+        {currentUser?.photoURL ? ( // User profile picture
           <img 
             src={currentUser.photoURL} 
             alt="Avatar" 
@@ -123,7 +123,7 @@ export default function Profile() {
 
       {/* CORE FORM ROWS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* CONTACT SETTINGS CARD */}
+        {/* CONTACT SETTINGS CARD */} 
         <div className="card p-6 bg-navy-card border border-white/[0.07] rounded-3xl space-y-5">
           <h4 className="text-white text-sm font-semibold tracking-tight pb-3 border-b border-white/[0.05]">
             Account settings details
@@ -200,7 +200,7 @@ export default function Profile() {
         </div>
 
         {/* SECURITY PASSWORD CHANGE CARD */}
-        <div className="card p-6 bg-navy-card border border-white/[0.07] rounded-3xl space-y-5">
+        <div className="card p-6 bg-navy-card border border-white/[0.07] rounded-3xl space-y-5" data-aos="fade-left" data-aos-delay="100">
           <h4 className="text-white text-sm font-semibold tracking-tight pb-3 border-b border-white/[0.05]">
             Password Credential Reset
           </h4>

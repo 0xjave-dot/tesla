@@ -131,7 +131,7 @@ export default function Wallet() {
   });
 
   return (
-    <div className="space-y-8 select-none">
+    <div className="space-y-8 select-none" data-aos="fade-up">
       {/* SECTION TIER: CORES */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
@@ -139,7 +139,7 @@ export default function Wallet() {
         <div className="space-y-4">
           <h4 className="text-white/40 text-[10px] font-bold tracking-widest uppercase pl-1">Wallet Accounts</h4>
           
-          {/* AVAILABLE CARD */}
+          {/* AVAILABLE CARD */} 
           <div className="card p-6 bg-navy-card border border-white/[0.07] rounded-3xl flex flex-col justify-between relative overflow-hidden h-40">
             <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-gain rounded-full" />
             <div className="flex justify-between items-start">
@@ -156,7 +156,7 @@ export default function Wallet() {
             </div>
           </div>
 
-          {/* TOTAL INJECTED */}
+          {/* TOTAL INJECTED */} 
           <div className="card p-6 bg-navy-card border border-white/[0.07] rounded-3xl flex flex-col justify-between relative overflow-hidden h-40">
             <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-white/30 rounded-full" />
             <div className="flex justify-between items-start">
@@ -175,7 +175,7 @@ export default function Wallet() {
         </div>
 
         {/* RIGHT COLUMN: FUND ACCESS FORMS (2/3) */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4" data-aos="fade-left" data-aos-delay="100">
           <h4 className="text-white/40 text-[10px] font-bold tracking-widest uppercase pl-1">Monetary Access Consoles</h4>
           
           <div className="card p-6 bg-navy-card border border-white/[0.07] rounded-3xl flex flex-col">
@@ -370,7 +370,7 @@ export default function Wallet() {
       </div>
 
       {/* SECTION TIER: AUDIT LOG TRANSACTION HISTORIES */}
-      <section className="space-y-3.5">
+      <section className="space-y-3.5" data-aos="fade-up" data-aos-delay="200">
         <div className="flex justify-between items-center px-1">
           <div className="flex items-center gap-2.5">
             <History className="w-4 h-4 text-white/35" />

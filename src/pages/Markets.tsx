@@ -46,7 +46,7 @@ export default function Markets() {
   });
 
   return (
-    <div className="space-y-4 sm:space-y-8 select-none">
+    <div className="space-y-4 sm:space-y-8 select-none" data-aos="fade-up">
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
         <div>
@@ -62,7 +62,7 @@ export default function Markets() {
       </div>
 
       {/* TABS FILTER AND SEARCH ROW */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center bg-navy-card/40 border border-white/[0.04] p-3 sm:p-4 rounded-lg sm:rounded-2xl">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center bg-navy-card/40 border border-white/[0.04] p-3 sm:p-4 rounded-lg sm:rounded-2xl" data-aos="fade-up" data-aos-delay="100">
         {/* Left Filter Pill tab group */}
         <div className="bg-navy-sidebar border border-white/[0.05] rounded-lg sm:rounded-xl p-1 flex gap-1 select-none overflow-x-auto">
           <button
@@ -109,7 +109,7 @@ export default function Markets() {
           />
         </div>
       </div>
-
+      
       {/* MARKETS LIST TABLE */}
       {loading ? (
         <div className="card overflow-hidden">
@@ -128,7 +128,7 @@ export default function Markets() {
           submessage="Try adjusting your filters or search coordinates." 
         />
       ) : (
-        <div className="card overflow-hidden border border-white/[0.07] bg-navy-card rounded-lg sm:rounded-2xl shadow-xl">
+        <div className="card overflow-hidden border border-white/[0.07] bg-navy-card rounded-lg sm:rounded-2xl shadow-xl" data-aos="fade-up" data-aos-delay="200">
           {/* Desktop Table View */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[640px]">

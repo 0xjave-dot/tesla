@@ -264,7 +264,7 @@ export default function AdminUserDetail() {
   }
 
   return (
-    <div className="space-y-8 select-none">
+    <div className="space-y-8 select-none" data-aos="fade-up">
       {/* Back button */}
       <div>
         <Link to="/admin/users" className="text-white/40 text-xs font-semibold hover:text-white inline-flex items-center gap-1.5 transition">
@@ -275,7 +275,7 @@ export default function AdminUserDetail() {
 
       {/* RE-USABLE USER OVERVIEW SUB-STRIP */}
       <section className="bg-navy-card border border-white/[0.07] p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" data-aos="fade-right" data-aos-delay="100">
           {user.photoURL ? (
             <img src={user.photoURL} alt={user.name} className="w-14 h-14 rounded-full border border-white/25 object-cover" />
           ) : (
@@ -292,7 +292,7 @@ export default function AdminUserDetail() {
           </div>
         </div>
 
-        {/* Aggregate numeric balances */}
+        {/* Aggregate numeric balances */} 
         <div className="flex gap-8 md:gap-14 border-t md:border-t-0 md:border-l border-white/[0.07] pt-4 md:pt-0 md:pl-12 w-full md:w-auto text-xs">
           <div>
             <span className="text-white/35 text-[9px] font-bold uppercase block">Trading cash</span>
@@ -322,7 +322,7 @@ export default function AdminUserDetail() {
       </section>
 
       {/* DOUBLE-HALF SECTION: ADJUST BALANCES MANUAL CONTROLLER & POSITION TABLE */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start" data-aos="fade-up" data-aos-delay="200">
         
         {/* MANUAL ADJUST BALANCES CONTAINER CARD */}
         <div className="card p-6 bg-navy-card border border-white/[0.07] rounded-3xl flex flex-col justify-between">
@@ -479,7 +479,7 @@ export default function AdminUserDetail() {
       </section>
 
       {/* THIRD LAYER DOUBLE ROWS: ORDER SETTLEMENT LEDGER & TRANSFERS */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8" data-aos="fade-up" data-aos-delay="300">
         
         {/* ORDERS BOARD LIST */}
         <div className="space-y-4">

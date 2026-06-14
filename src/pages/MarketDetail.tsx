@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   useBalance, 
+  useAssets,
   placeBuyOrder, 
   placeSellOrder,
   handleFirestoreError,
@@ -34,7 +35,17 @@ import {
   Clock,
   History
 } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { 
+  ComposedChart, 
+  Area, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  Cell 
+} from 'recharts';
 
 // High-quality flashing price display for the detail header to match the Markets list
 const LivePriceHeader: React.FC<{ price: number }> = ({ price }) => {
@@ -62,6 +73,22 @@ const LivePriceHeader: React.FC<{ price: number }> = ({ price }) => {
   );
 };
 
+// Custom Candlestick implementation for Recharts
+const Candlestick = (props: any) => {
+  const { x, y, width, height, low, high, open, close } = props;
+  const isUp = close >= open;
+  const color = isUp ? '#22c55e' : '#ef4444';
+  const ratio = Math.abs(open - close) / (high - low);
+
+  return (
+    <g>
+      <line x1={x + width / 2} y1={y} x2={x + width / 2} y2={y + height} stroke={color} strokeWidth={1} />
+      <rect x={x} y={isUp ? y + (high - open) * (height / (high - low)) : y + (high - close) * (height / (high - low))} 
+            width={width} height={Math.max(1, Math.abs(open - close) * (height / (high - low)))} fill={color} />
+    </g>
+  );
+};
+
 export default function MarketDetail() {
   const { symbol } = useParams<{ symbol: string }>();
   const { currentUser } = useAuth();
@@ -75,9 +102,10 @@ export default function MarketDetail() {
   const [assetLoading, setAssetLoading] = useState(true); // Keep local loading, but update from hook
   const [ordersLoading, setOrdersLoading] = useState(true);
 
-  // Time Range tabs (Simulated)
+  // Chart configurations
   const [timeTab, setTimeTab] = useState<'1H' | '1D' | '1W' | '1M'>('1D');
-  const [chartData, setChartData] = useState<{ time: string; price: number }[]>([]);
+  const [chartType, setChartType] = useState<'line' | 'candle'>('candle');
+  const [chartData, setChartData] = useState<any[]>([]);
 
   // Trade form state
   const [tradeSide, setTradeSide] = useState<OrderSide>('buy');
@@ -179,35 +207,46 @@ export default function MarketDetail() {
       
       const items = [];
       let ticks = 60;
-      let multiplier = 1;
+      let volatilityMultiplier = 1;
       let formatLabel = (i: number) => `t-${i}`;
 
       if (timeTab === '1H') {
         ticks = 15;
-        formatLabel = (i: number) => `${i * 4}m ago`;
+        volatilityMultiplier = 0.5;
+        formatLabel = (i: number) => `${(ticks - 1 - i) * 4}m ago`;
       } else if (timeTab === '1D') {
         ticks = 30;
-        formatLabel = (i: number) => `${i}h ago`;
+        formatLabel = (i: number) => `${ticks - 1 - i}h ago`;
       } else if (timeTab === '1W') {
         ticks = 40;
-        multiplier = 2;
-        formatLabel = (i: number) => `Day ${7 - Math.floor(i / 5)}`;
+        volatilityMultiplier = 2;
+        formatLabel = (i: number) => `Day ${Math.floor(i / 5) + 1}`;
       } else if (timeTab === '1M') {
         ticks = 60;
-        multiplier = 4;
-        formatLabel = (i: number) => `D-${60 - i}`;
+        volatilityMultiplier = 4;
+        formatLabel = (i: number) => `D-${ticks - 1 - i}`;
       }
 
-      let current = activePrice * (0.95 + Math.random() * 0.05);
+      let lastClose = activePrice * (0.98 + Math.random() * 0.04);
+      
       for (let i = 0; i < ticks; i++) {
-        const volatility = 0.0055 * multiplier;
+        const volatility = 0.004 * volatilityMultiplier;
         const drift = 0.0002;
-        const change = current * ((Math.random() - 0.47) * volatility + drift);
-        current += change;
+        
+        const open = lastClose;
+        const close = open + open * ((Math.random() - 0.48) * volatility + drift);
+        const high = Math.max(open, close) + (Math.random() * open * 0.002);
+        const low = Math.min(open, close) - (Math.random() * open * 0.002);
+        
         items.push({
           time: formatLabel(i),
-          price: parseFloat(current.toFixed(2))
+          open: parseFloat(open.toFixed(2)),
+          high: parseFloat(high.toFixed(2)),
+          low: parseFloat(low.toFixed(2)),
+          close: parseFloat(close.toFixed(2)),
+          price: parseFloat(close.toFixed(2)) // for line fallback
         });
+        lastClose = close;
       }
 
       items[items.length - 1] = {
@@ -296,7 +335,7 @@ export default function MarketDetail() {
   }
 
   return (
-    <div className="space-y-8 select-none">
+    <div className="space-y-8 select-none" data-aos="fade-up">
       {/* Back to listings button */}
       <div>
         <Link to="/dashboard/markets" className="text-white/40 text-xs font-semibold hover:text-white inline-flex items-center gap-1.5 transition">
@@ -307,7 +346,7 @@ export default function MarketDetail() {
 
       {/* CORE TWO-COLUMN TRADE TERMINAL */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
+
         {/* LEFT COLUMN: TRAJECTORY AND CHART DESCRIPTION (2/3) */}
         <div className="lg:col-span-2 space-y-6">
           {/* ASSET METADATA BLOCK */}
@@ -353,34 +392,48 @@ export default function MarketDetail() {
 
           {/* TRAJECTORY DATA GRAPH CARD */}
           <div className="card p-6 bg-navy-card border border-white/[0.07] rounded-3xl flex flex-col justify-between">
-            <div className="flex justify-between items-center pb-4 border-b border-white/[0.05] mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-white/[0.05] mb-6">
               <div>
                 <span className="text-sm font-semibold text-white">Price History</span>
                 <span className="text-white/30 text-[10px] block mt-0.5">Custom timeline coordinates</span>
               </div>
 
-              {/* Time group switches */}
-              <div className="bg-navy-sidebar border border-white/[0.05] rounded-xl p-1 flex gap-1 font-mono">
-                {(['1H', '1D', '1W', '1M'] as const).map((tab) => (
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                {/* Chart Type Toggle */}
+                <div className="bg-navy-sidebar border border-white/[0.05] rounded-xl p-1 flex gap-1">
                   <button
-                    key={tab}
-                    onClick={() => setTimeTab(tab)}
-                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg cursor-pointer ${
-                      timeTab === tab
-                        ? 'bg-accent/15 text-accent border border-accent/10 font-bold'
-                        : 'text-white/40 hover:text-white'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
+                    onClick={() => setChartType('candle')}
+                    className={`p-1.5 rounded-lg transition ${chartType === 'candle' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white'}`}
+                  ><TrendingUp className="w-4 h-4" /></button>
+                  <button
+                    onClick={() => setChartType('line')}
+                    className={`p-1.5 rounded-lg transition ${chartType === 'line' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white'}`}
+                  ><TrendingDown className="w-4 h-4 rotate-180" /></button>
+                </div>
+
+                {/* Time group switches */}
+                <div className="bg-navy-sidebar border border-white/[0.05] rounded-xl p-1 flex flex-1 sm:flex-none gap-1 font-mono">
+                  {(['1H', '1D', '1W', '1M'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setTimeTab(tab)}
+                      className={`flex-1 sm:flex-none px-3 py-1.5 text-[10px] font-bold rounded-lg cursor-pointer ${
+                        timeTab === tab
+                          ? 'bg-accent/15 text-accent border border-accent/10 font-bold'
+                          : 'text-white/40 hover:text-white'
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Recharts Trajectory */}
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                   <defs>
                     <linearGradient id="detailChartGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.15} />
@@ -408,18 +461,23 @@ export default function MarketDetail() {
                       color: '#ffffff',
                       fontSize: '11px'
                     }}
-                    itemStyle={{ color: '#06b6d4' }}
                     labelStyle={{ color: 'rgba(255,255,255,0.5)' }}
-                    formatter={(value) => [`$${value}`, 'Price']}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="price"
-                    stroke="#06b6d4"
-                    strokeWidth={2}
-                    fill="url(#detailChartGradient)"
-                  />
-                </AreaChart>
+                  {chartType === 'line' ? (
+                    <Area
+                      type="monotone"
+                      dataKey="price"
+                      stroke="#06b6d4"
+                      strokeWidth={2}
+                      fill="url(#detailChartGradient)"
+                    />
+                  ) : (
+                    <Bar
+                      dataKey="close"
+                      shape={<Candlestick />}
+                    />
+                  )}
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           </div>
@@ -577,7 +635,7 @@ export default function MarketDetail() {
       </div>
 
       {/* FOOTER SECTION: PORTFOLIO HISTORIC TRADES FOR THIS ASSET */}
-      <section className="space-y-3.5">
+      <section className="space-y-3.5" data-aos="fade-up" data-aos-delay="100">
         <div className="flex items-center gap-2 pl-1">
           <History className="w-4 h-4 text-white/35" />
           <h4 className="text-white text-sm font-semibold tracking-tight">Your Order Ledger &bull; {symbol!.toUpperCase()}</h4>

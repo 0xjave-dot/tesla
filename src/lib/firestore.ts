@@ -404,7 +404,7 @@ export function useAssets() {
   const [loading, setLoading] = useState<boolean>(true);
 
   // Demo assets to show when real data is unavailable
-  const DEMO_ASSETS: Asset[] = [
+  const DEMO_ASSETS: Asset[] = [ // Demo assets to show when real data is unavailable
     { symbol: 'TSLA', name: 'Tesla Motor, Inc.', type: 'stock', currentPrice: 208.50, change24h: 3.12, priceSource: 'demo', logoUrl: 'https://i.pinimg.com/736x/43/e9/69/43e969979dfd8ae4b364f517571aee58.jpg' },
     { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock', currentPrice: 195.75, change24h: 1.25, priceSource: 'demo', logoUrl: 'https://cdn-icons-png.flaticon.com/512/0/747.png' },
     { symbol: 'MSFT', name: 'Microsoft Corporation', type: 'stock', currentPrice: 420.30, change24h: 2.08, priceSource: 'demo', logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/3840px-Microsoft_logo.svg.png' },

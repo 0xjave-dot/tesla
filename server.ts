@@ -15,6 +15,17 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Enable CORS for local testing/development
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // Helper to load project ID from firebase-applet-config.json
 function getFirebaseProjectId(): string {
   try {
@@ -83,7 +94,7 @@ const SEED_ASSETS = [
   { symbol: 'NVDA', name: 'Nvidia Corp.', type: 'stock', logoUrl: 'https://1000logos.net/wp-content/uploads/2017/05/Color-NVIDIA-Logo.jpg' },
   { symbol: 'META', name: 'Meta Platforms, Inc.', type: 'stock', logoUrl: 'https://cdn.pixabay.com/photo/2021/12/14/22/29/meta-6871457_1280.png' },
   { symbol: 'NFLX', name: 'Netflix Inc.', type: 'stock', logoUrl: 'https://platform.theverge.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/15844974/netflixlogo.0.0.1466448626.png?quality=90&strip=all&crop=1.2535702951444%2C0%2C97.492859409711%2C100&w=2400' },
-  { symbol: 'SPACEX', name: 'SpaceX', type: 'stock', logoUrl: 'https://www.spacex.com/assets/images/share.jpg' },
+  { symbol: 'SPACEX', name: 'SpaceX', type: 'stock', logoUrl: 'https://www.spacex.com/assets/images/share.jpg' }, // SpaceX is a private company, price data might be limited
   { symbol: 'BTC', name: 'Bitcoin', type: 'crypto', logoUrl: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
   { symbol: 'ETH', name: 'Ethereum', type: 'crypto', logoUrl: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' },
   { symbol: 'SOL', name: 'Solana', type: 'crypto', logoUrl: 'https://assets.coingecko.com/coins/images/4128/small/solana.png' },
@@ -224,93 +235,11 @@ async function runBackgroundUpdates() {
     // Interval to fetch LIVE quotes and update Firebase
     setInterval(async () => {
       try {
+        const livePrices = await fetchAllPrices();
+        if (Object.keys(livePrices).length === 0) return;
+
         const batch = dbAdmin.batch();
         const activeSnap = await assetsRef.get();
-        
-        let livePrices: Record<string, { price: number; change24h: number }> = {};
-        
-        // 1. Try fetching cryptos from CoinGecko
-        const cgKey = process.env.COINGECKO_API_KEY;
-        if (cgKey) {
-          try {
-            const cgRes = await fetch(
-              `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true`,
-              {
-                headers: { 'x-cg-api-key': cgKey }
-              }
-            );
-            if (cgRes.ok) {
-              const cgData = await cgRes.json() as any;
-              if (cgData.bitcoin) {
-                livePrices['BTC'] = { price: cgData.bitcoin.usd, change24h: cgData.bitcoin.usd_24h_change || 0 };
-              }
-              if (cgData.ethereum) {
-                livePrices['ETH'] = { price: cgData.ethereum.usd, change24h: cgData.ethereum.usd_24h_change || 0 };
-              }
-              if (cgData.solana) {
-                livePrices['SOL'] = { price: cgData.solana.usd, change24h: cgData.solana.usd_24h_change || 0 };
-              }
-            }
-          } catch (e) {
-            console.warn("CoinGecko API call errored, trying twelve data fallback:", e);
-          }
-        }
-
-        // 2. Try fetching stocks from Twelve Data
-        const tdKey = process.env.TWELVE_DATA_API_KEY;
-        if (tdKey) {
-          try {
-            const symbolsReq = 'TSLA,AAPL,MSFT,AMZN,GOOGL,NVDA';
-            const tdRes = await fetch(
-              `https://api.twelvedata.com/quote?symbol=${symbolsReq}&apikey=${tdKey}`
-            );
-            if (tdRes.ok) {
-              const tdData = await tdRes.json() as any;
-              // format of multi-symbol quote is { "TSLA": { "close": "189", "percent_change": "1.2" } }
-              const symbolsList = symbolsReq.split(',');
-              for (const sym of symbolsList) {
-                const symData = tdData[sym];
-                if (symData && symData.price) {
-                  livePrices[sym] = {
-                    price: parseFloat(symData.price),
-                    change24h: symData.percent_change ? parseFloat(symData.percent_change) : 0
-                  };
-                } else if (symData && symData.close) {
-                  livePrices[sym] = {
-                    price: parseFloat(symData.close),
-                    change24h: symData.percent_change ? parseFloat(symData.percent_change) : 0
-                  };
-                }
-              }
-            }
-          } catch (e) {
-            console.warn("Twelve Data API call errored, trying Finnhub fallback:", e);
-          }
-        }
-
-        // 3. Finnhub Fallback for stocks
-        const fhKey = process.env.FINNHUB_API_KEY;
-        if (fhKey) {
-          const stocksToTry = ['TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'NVDA'];
-          for (const sym of stocksToTry) {
-            if (!livePrices[sym]) {
-              try {
-                const fhRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${fhKey}`);
-                if (fhRes.ok) {
-                  const fhData = await fhRes.json() as any;
-                  if (fhData.c && fhData.c !== 0) {
-                    livePrices[sym] = {
-                      price: parseFloat(fhData.c),
-                      change24h: fhData.dp ? parseFloat(fhData.dp) : 0
-                    };
-                  }
-                }
-              } catch (e) {
-                console.warn(`Finnhub quote for ${sym} failed:`, e);
-              }
-            }
-          }
-        }
 
         // Update only assets for which live quotes are available
         activeSnap.forEach((doc) => {
@@ -449,7 +378,11 @@ app.get('/api/market/history/:symbol', async (req, res) => {
           const sortedValues = [...tdData.values].reverse();
           const chartOutput = sortedValues.map((v: any, idx: number) => ({
             time: formatLabel(v.datetime, idx),
-            price: parseFloat(parseFloat(v.close).toFixed(2))
+            price: parseFloat(v.close),
+            open: parseFloat(v.open),
+            high: parseFloat(v.high),
+            low: parseFloat(v.low),
+            close: parseFloat(v.close)
           }));
           return res.json({ source: 'twelvedata', data: chartOutput });
         }
@@ -525,6 +458,7 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Tesla Stock Investment server running on port ${PORT}`);
+    console.log(`- Local Access: http://localhost:${PORT}`);
   });
 }
 
