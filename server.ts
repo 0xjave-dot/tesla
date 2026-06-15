@@ -11,7 +11,7 @@ dotenv.config();
 
 // Initialize Express
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
 
@@ -431,37 +431,48 @@ async function startServer() {
     });
     app.use(vite.middlewares);
 
-    // SPA fallback for development mode: Transform and serve index.html for non-API requests
-    app.use('*', async (req, res, next) => {
+n    // SPA fallback for development mode: catch-all for navigation requests
+    app.get('*', async (req, res, next) => {
       const url = req.originalUrl;
-      if (url.startsWith('/api')) return next();
-      
+
+      // Skip requests for API or static files (anything with a dot like .js, .css, .png)
+      if (url.startsWith('/api') || url.includes('.')) {
+        return next();
+      }
+
       try {
         const indexPath = path.resolve(process.cwd(), 'index.html');
-        if (!fs.existsSync(indexPath)) return next();
+        
+        if (!fs.existsSync(indexPath)) {
+          console.error(`[Dev Fallback Error] index.html not found at: ${indexPath}`);
+          return next();
+        }
 
         let template = fs.readFileSync(indexPath, 'utf-8');
+        // Inject Vite HMR and resolve module paths
         template = await vite.transformIndexHtml(url, template);
+        
         res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
       } catch (e) {
         vite.ssrFixStacktrace(e as Error);
+        console.error('[Dev Fallback Error] Transformation failed:', e);
         next(e);
       }
     });
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, { index: false }));
 
-    // Production fallback: Send index.html for all non-API and non-file requests
+    // Production fallback
     app.get('*', (req, res) => {
       if (req.originalUrl.startsWith('/api')) {
         return res.status(404).json({ error: 'API endpoint not found' });
       }
-      res.sendFile(path.join(distPath, 'index.html'));
+      res.sendFile(path.resolve(distPath, 'index.html'));
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Tesla Stock Investment server running on port ${PORT}`);
     console.log(`- Local Access: http://localhost:${PORT}`);
   });
