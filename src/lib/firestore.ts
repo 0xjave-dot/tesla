@@ -405,22 +405,24 @@ export function useAssets() {
 
   // Demo assets to show when real data is unavailable
   const DEMO_ASSETS: Asset[] = [ // Demo assets to show when real data is unavailable
-    { symbol: 'TSLA', name: 'Tesla Motor, Inc.', type: 'stock', currentPrice: 208.50, change24h: 3.12, priceSource: 'demo', logoUrl: 'https://i.pinimg.com/736x/43/e9/69/43e969979dfd8ae4b364f517571aee58.jpg' },
-    { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock', currentPrice: 195.75, change24h: 1.25, priceSource: 'demo', logoUrl: 'https://cdn-icons-png.flaticon.com/512/0/747.png' },
-    { symbol: 'MSFT', name: 'Microsoft Corporation', type: 'stock', currentPrice: 420.30, change24h: 2.08, priceSource: 'demo', logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/3840px-Microsoft_logo.svg.png' },
-    { symbol: 'AMZN', name: 'Amazon.com, Inc.', type: 'stock', currentPrice: 175.80, change24h: -0.95, priceSource: 'demo', logoUrl: 'https://cdn.vectorstock.com/i/500p/01/10/amazon-logo-vector-46860110.jpg' },
-    { symbol: 'GOOGL', name: 'Alphabet Inc.', type: 'stock', currentPrice: 140.25, change24h: 1.85, priceSource: 'demo', logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/1280px-Google_Favicon_2025.svg.png' },
-    { symbol: 'NVDA', name: 'Nvidia Corp.', type: 'stock', currentPrice: 875.40, change24h: 4.50, priceSource: 'demo', logoUrl: 'https://1000logos.net/wp-content/uploads/2017/05/Color-NVIDIA-Logo.jpg' },
-    { symbol: 'META', name: 'Meta Platforms, Inc.', type: 'stock', currentPrice: 485.20, change24h: 2.30, priceSource: 'demo', logoUrl: 'https://cdn.pixabay.com/photo/2021/12/14/22/29/meta-6871457_1280.png' },
-    { symbol: 'NFLX', name: 'Netflix Inc.', type: 'stock', currentPrice: 425.10, change24h: -1.50, priceSource: 'demo', logoUrl: 'https://platform.theverge.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/15844974/netflixlogo.0.0.1466448626.png?quality=90&strip=all&crop=1.2535702951444%2C0%2C97.492859409711%2C100&w=2400' },
+    { symbol: 'TSLA', name: 'Tesla Motor, Inc.', type: 'stock', currentPrice: 345.20, change24h: 3.12, priceSource: 'demo', logoUrl: 'https://i.pinimg.com/736x/43/e9/69/43e969979dfd8ae4b364f517571aee58.jpg' },
+    { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock', currentPrice: 228.45, change24h: 1.25, priceSource: 'demo', logoUrl: 'https://cdn-icons-png.flaticon.com/512/0/747.png' },
+    { symbol: 'MSFT', name: 'Microsoft Corporation', type: 'stock', currentPrice: 415.30, change24h: 2.08, priceSource: 'demo', logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/3840px-Microsoft_logo.svg.png' },
+    { symbol: 'AMZN', name: 'Amazon.com, Inc.', type: 'stock', currentPrice: 198.80, change24h: -0.95, priceSource: 'demo', logoUrl: 'https://cdn.vectorstock.com/i/500p/01/10/amazon-logo-vector-46860110.jpg' },
+    { symbol: 'GOOGL', name: 'Alphabet Inc.', type: 'stock', currentPrice: 172.25, change24h: 1.85, priceSource: 'demo', logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/1280px-Google_Favicon_2025.svg.png' },
+    { symbol: 'NVDA', name: 'Nvidia Corp.', type: 'stock', currentPrice: 145.40, change24h: 4.50, priceSource: 'demo', logoUrl: 'https://1000logos.net/wp-content/uploads/2017/05/Color-NVIDIA-Logo.jpg' },
+    { symbol: 'META', name: 'Meta Platforms, Inc.', type: 'stock', currentPrice: 585.20, change24h: 2.30, priceSource: 'demo', logoUrl: 'https://cdn.pixabay.com/photo/2021/12/14/22/29/meta-6871457_1280.png' },
+    { symbol: 'NFLX', name: 'Netflix Inc.', type: 'stock', currentPrice: 825.10, change24h: -1.50, priceSource: 'demo', logoUrl: 'https://platform.theverge.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/15844974/netflixlogo.0.0.1466448626.png?quality=90&strip=all&crop=1.2535702951444%2C0%2C97.492859409711%2C100&w=2400' },
     { symbol: 'SPACEX', name: 'SpaceX', type: 'stock', currentPrice: 215.50, change24h: 1.10, priceSource: 'demo', logoUrl: 'https://www.spacex.com/assets/images/share.jpg' },
-    { symbol: 'BTC', name: 'Bitcoin', type: 'crypto', currentPrice: 65420.00, change24h: 5.25, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
-    { symbol: 'ETH', name: 'Ethereum', type: 'crypto', currentPrice: 3485.50, change24h: 3.80, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' },
-    { symbol: 'SOL', name: 'Solana', type: 'crypto', currentPrice: 142.30, change24h: 4.15, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/4128/small/solana.png' },
-    { symbol: 'XRP', name: 'XRP', type: 'crypto', currentPrice: 2.45, change24h: 2.10, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png' },
-    { symbol: 'ADA', name: 'Cardano', type: 'crypto', currentPrice: 0.95, change24h: 1.50, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/975/small/cardano.png' },
-    { symbol: 'DOGE', name: 'Dogecoin', type: 'crypto', currentPrice: 0.38, change24h: -2.20, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/5/small/dogecoin.png' },
-    { symbol: 'LINK', name: 'Chainlink', type: 'crypto', currentPrice: 28.75, change24h: 3.40, priceSource: 'demo', logoUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKQG7VLkgiQhDj-m-jmXN246LOJEtMaLAjEw&s' }
+    { symbol: 'BTC', name: 'Bitcoin', type: 'crypto', currentPrice: 96420.00, change24h: 5.25, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
+    { symbol: 'ETH', name: 'Ethereum', type: 'crypto', currentPrice: 3285.50, change24h: 3.80, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' },
+    { symbol: 'SOL', name: 'Solana', type: 'crypto', currentPrice: 242.30, change24h: 4.15, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/4128/small/solana.png' },
+    { symbol: 'XRP', name: 'XRP', type: 'crypto', currentPrice: 2.85, change24h: 2.10, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png' },
+    { symbol: 'ADA', name: 'Cardano', type: 'crypto', currentPrice: 0.85, change24h: 1.50, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/975/small/cardano.png' },
+    { symbol: 'DOGE', name: 'Dogecoin', type: 'crypto', currentPrice: 0.42, change24h: -2.20, priceSource: 'demo', logoUrl: 'https://assets.coingecko.com/coins/images/5/small/dogecoin.png' },
+    { symbol: 'LINK', name: 'Chainlink', type: 'crypto', currentPrice: 22.75, change24h: 3.40, priceSource: 'demo', logoUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKQG7VLkgiQhDj-m-jmXN246LOJEtMaLAjEw&s' },
+    { symbol: 'APG', name: 'APG Asset Management', type: 'stock', currentPrice: 42.20, change24h: 0.85, priceSource: 'demo', logoUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0PQ8nKW5-CeZ1odHtQdpO-SMZDgMURkJncA&s' },
+    { symbol: 'GDM', name: 'Golden Dawn Minerals', type: 'stock', currentPrice: 0.10, change24h: -1.50, priceSource: 'demo', logoUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRCxHKh3rVcPXg8lYXLw7l2uTbnZd9mfhYKg&s' }
   ];
 
   useEffect(() => {
@@ -437,7 +439,7 @@ export function useAssets() {
 
       // If collection is empty, use demo assets
       if (items.length === 0) {
-        console.log('Assets collection empty, using demo assets for UI testing');
+        console.warn('Live assets collection empty, showing DEMO values.');
         items.push(...DEMO_ASSETS);
         DEMO_ASSETS.forEach(asset => {
           map[asset.symbol] = asset;

@@ -49,26 +49,38 @@ import {
 
 // High-quality flashing price display for the detail header to match the Markets list
 const LivePriceHeader: React.FC<{ price: number }> = ({ price }) => {
-  const prevPriceRef = useRef<number | null>(null);
+  const [displayPrice, setDisplayPrice] = useState(price);
+  const prevPriceRef = useRef<number>(price);
   const [flashClass, setFlashClass] = useState<string>('');
 
   useEffect(() => {
-    if (prevPriceRef.current !== null && prevPriceRef.current !== price) {
+    if (prevPriceRef.current !== price) {
       const direction = price > prevPriceRef.current ? 'animate-price-up-flash' : 'animate-price-down-flash';
       setFlashClass(direction);
+      setDisplayPrice(price);
 
       // Dismiss flash after transition complete (800ms)
-      const timer = setTimeout(() => {
-        setFlashClass('');
-      }, 800);
+      const timer = setTimeout(() => setFlashClass(''), 800);
       return () => clearTimeout(timer);
     }
     prevPriceRef.current = price;
   }, [price]);
 
+  // Simulated jitter for "Live" feel between server syncs
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const jitter = (Math.random() - 0.5) * (displayPrice * 0.0001);
+      setDisplayPrice(prev => prev + jitter);
+    }, 2500 + Math.random() * 1500);
+    return () => clearInterval(intervalId);
+  }, [displayPrice]);
+
   return (
     <span className={`num text-3xl font-medium text-white block px-2 py-0.5 rounded transition duration-200 ${flashClass}`}>
-      ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      ${displayPrice.toLocaleString('en-US', {
+        minimumFractionDigits: displayPrice < 0.01 ? 6 : (displayPrice < 1 ? 4 : 2),
+        maximumFractionDigits: displayPrice < 0.01 ? 6 : (displayPrice < 1 ? 4 : 2)
+      })}
     </span>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -25,6 +25,40 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+
+// Unified High-Quality Price Component for Dashboard
+const DynamicPrice: React.FC<{ price: number; className?: string }> = ({ price, className = "" }) => {
+  const [displayPrice, setDisplayPrice] = useState(price);
+  const prevPriceRef = useRef<number>(price);
+  const [flash, setFlash] = useState("");
+
+  useEffect(() => {
+    if (prevPriceRef.current !== price) {
+      setFlash(price > prevPriceRef.current ? "text-gain" : "text-loss");
+      setDisplayPrice(price);
+      const timer = setTimeout(() => setFlash(""), 1000);
+      return () => clearTimeout(timer);
+    }
+    prevPriceRef.current = price;
+  }, [price]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const jitter = (Math.random() - 0.5) * (displayPrice * 0.0001);
+      setDisplayPrice(prev => prev + jitter);
+    }, 2000 + Math.random() * 3000);
+    return () => clearInterval(interval);
+  }, [displayPrice]);
+
+  return (
+    <span className={`num transition-colors duration-500 ${flash} ${className}`}>
+      ${displayPrice.toLocaleString('en-US', {
+        minimumFractionDigits: displayPrice < 1 ? 4 : 2,
+        maximumFractionDigits: displayPrice < 1 ? 6 : 2
+      })}
+    </span>
+  );
+};
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
@@ -207,9 +241,7 @@ export default function Dashboard() {
 
             <div className="flex items-center gap-6">
               <div className="text-right">
-                <span className="num text-lg font-medium text-white block">
-                  ${tslaPrice.toFixed(2)}
-                </span>
+                <DynamicPrice price={tslaPrice} className="text-lg font-medium text-white block" />
                 <PriceChange value={tslaChange} className="text-xs" />
               </div>
               <Link to="/dashboard/markets/TSLA" className="text-xs flex items-center gap-1 font-semibold text-accent hover:text-white transition">
@@ -245,22 +277,23 @@ export default function Dashboard() {
       {/* TOP ASSETS SLIDE-TICKER ROW */}
       <section className="space-y-3.5">
         <h4 className="text-white/40 text-[10px] font-bold tracking-widest uppercase pl-1">Trading Asset Ticker</h4>
-        <div className="flex gap-4 overflow-x-auto pb-1.5 scrollbar-none">
+        <div className="overflow-hidden relative group">
+          <div className="flex gap-4 animate-ticker-slow hover:pause-animation py-1 w-max">
           {assetsLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="bg-navy-card/40 border border-white/[0.04] p-4 rounded-xl w-44 h-24 animate-pulse" />
             ))
           ) : (
-            assets.map((asset) => (
+            [...assets, ...assets].map((asset, idx) => (
               <Link 
-                key={asset.symbol} 
+                key={`${asset.symbol}-${idx}`} 
                 to={`/dashboard/markets/${asset.symbol}`}
-                className="bg-navy-card hover:bg-navy-raised border border-white/[0.06] hover:border-white/10 rounded-xl p-4 flex-shrink-0 w-44 transition shadow-md block group select-none"
+                className="bg-navy-card hover:bg-navy-raised border border-white/[0.06] hover:border-white/10 rounded-xl p-4 flex-shrink-0 w-44 transition shadow-md block select-none"
               >
                 <div className="flex justify-between items-start">
                   <div className="min-w-0">
                     <span className="text-xs text-white/50 block font-light font-sans truncate">{asset.name}</span>
-                    <span className="text-sm font-semibold text-white block tracking-tight mt-0.5 group-hover:text-accent transition">{asset.symbol}</span>
+                    <span className="text-sm font-semibold text-white block tracking-tight mt-0.5 transition">{asset.symbol}</span>
                   </div>
                   <span className={`text-[9px] uppercase font-bold rounded px-1.5 py-0.5 ${
                     asset.type === 'crypto' ? 'bg-purple-500/10 text-purple-400' : 'bg-accent/10 text-accent'
@@ -270,13 +303,10 @@ export default function Dashboard() {
                 </div>
 
                 <div className="flex justify-between items-baseline mt-3.5">
-                  <span className="num text-sm text-white font-medium">
-                    ${asset.currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
+                  <DynamicPrice price={asset.currentPrice} className="text-sm text-white font-medium" />
                   <PriceChange value={asset.change24h} className="text-[10px]" />
                 </div>
                 
-                {/* Horizontal visual indicator line */}
                 <div className="w-full mt-2 h-0.5 rounded bg-white/[0.04]">
                   <div className={`h-full rounded ${asset.change24h >= 0 ? 'bg-gain' : 'bg-loss'}`} style={{
                     width: `${Math.min(Math.abs(asset.change24h) * 10 + 20, 100)}%`
@@ -285,6 +315,7 @@ export default function Dashboard() {
               </Link>
             ))
           )}
+          </div>
         </div>
       </section>
 

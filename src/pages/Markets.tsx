@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAssets } from '../lib/firestore';
 import { PriceChange, EmptyState } from '../components/common/Helpers';
@@ -6,26 +6,38 @@ import { Search, Sparkles, RefreshCw, Layers2, ArrowRight } from 'lucide-react';
 
 // Price change tracker to flash green or red on Firestore dynamic updates
 const LivePriceCell: React.FC<{ price: number; symbol: string }> = ({ price, symbol }) => {
-  const prevPriceRef = useRef<number | null>(null);
+  const [displayPrice, setDisplayPrice] = useState(price);
+  const prevPriceRef = useRef<number>(price);
   const [flashClass, setFlashClass] = useState<string>('');
 
   useEffect(() => {
-    if (prevPriceRef.current !== null && prevPriceRef.current !== price) {
+    if (prevPriceRef.current !== price) {
       const direction = price > prevPriceRef.current ? 'animate-price-up-flash' : 'animate-price-down-flash';
       setFlashClass(direction);
+      setDisplayPrice(price);
 
       // Dismiss flash after transition complete (800ms)
-      const timer = setTimeout(() => {
-        setFlashClass('');
-      }, 800);
+      const timer = setTimeout(() => setFlashClass(''), 800);
       return () => clearTimeout(timer);
     }
     prevPriceRef.current = price;
   }, [price]);
 
+  // Simulated micro-jitter for "Live Ticker" feel between server syncs
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const jitter = (Math.random() - 0.5) * (displayPrice * 0.00015);
+      setDisplayPrice(prev => prev + jitter);
+    }, 2000 + Math.random() * 2000);
+    return () => clearInterval(intervalId);
+  }, [displayPrice]);
+
   return (
     <span className={`num text-sm text-white font-medium px-2 py-1 rounded transition duration-200 ${flashClass}`}>
-      ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      ${displayPrice.toLocaleString('en-US', {
+        minimumFractionDigits: displayPrice < 0.01 ? 6 : (displayPrice < 1 ? 4 : 2),
+        maximumFractionDigits: displayPrice < 0.01 ? 6 : (displayPrice < 1 ? 4 : 2)
+      })}
     </span>
   );
 };
@@ -34,6 +46,18 @@ export default function Markets() {
   const navigate = useNavigate();
   const { assets, priceMap, loading } = useAssets();
   
+  // Find the latest update time from assets
+  const lastUpdate = useMemo(() => {
+    if (assets.length === 0) return null;
+    const timestamps = assets
+      .map(a => a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0)
+      .filter(t => t > 0);
+    if (timestamps.length === 0) return null;
+    return new Date(Math.max(...timestamps)).toLocaleTimeString([], { 
+      hour: '2-digit', minute: '2-digit', second: '2-digit' 
+    });
+  }, [assets]);
+
   const [activeTab, setActiveTab] = useState<'All' | 'stock' | 'crypto'>('All');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -53,10 +77,17 @@ export default function Markets() {
           <div className="flex items-center gap-2">
             <h2 className="text-lg sm:text-2xl font-medium tracking-tight text-white">Trading Markets</h2>
             <div className="w-2.5 h-2.5 rounded-full bg-gain animate-pulse mt-0.5" />
-            <span className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">Live feeds</span>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-white/40 font-semibold uppercase tracking-wider leading-none">Live feeds</span>
+              {lastUpdate && (
+                <span className="text-[8px] text-accent/60 font-mono mt-0.5">
+                  Synced: {lastUpdate}
+                </span>
+              )}
+            </div>
           </div>
           <p className="text-white/40 text-xs sm:text-sm mt-1">
-            Browse real-world equities and crypto quotes updated every 10 seconds.
+            Browse real-world equities and crypto quotes updated via Finnhub.
           </p>
         </div>
       </div>

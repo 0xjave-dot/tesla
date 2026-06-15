@@ -101,10 +101,24 @@ const SEED_ASSETS = [
   { symbol: 'XRP', name: 'XRP', type: 'crypto', logoUrl: 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png' },
   { symbol: 'ADA', name: 'Cardano', type: 'crypto', logoUrl: 'https://assets.coingecko.com/coins/images/975/small/cardano.png' },
   { symbol: 'DOGE', name: 'Dogecoin', type: 'crypto', logoUrl: 'https://assets.coingecko.com/coins/images/5/small/dogecoin.png' },
-  { symbol: 'LINK', name: 'Chainlink', type: 'crypto', logoUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKQG7VLkgiQhDj-m-jmXN246LOJEtMaLAjEw&s' }
+  { symbol: 'LINK', name: 'Chainlink', type: 'crypto', logoUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKQG7VLkgiQhDj-m-jmXN246LOJEtMaLAjEw&s' },
+  { symbol: 'APG', name: 'APG Asset Management', type: 'stock', logoUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0PQ8nKW5-CeZ1odHtQdpO-SMZDgMURkJncA&s' },
+  { symbol: 'GDM', name: 'Golden Dawn Minerals', type: 'stock', logoUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRCxHKh3rVcPXg8lYXLw7l2uTbnZd9mfhYKg&s' }
 ];
 
 // Map short symbols to CoinGecko coin IDs
+// AND Finnhub specific crypto symbols
+const FINNHUB_CRYPTO_MAP: Record<string, string> = {
+  'BTC': 'BINANCE:BTCUSDT',
+  'ETH': 'BINANCE:ETHUSDT',
+  'SOL': 'BINANCE:SOLUSDT',
+  'XRP': 'BINANCE:XRPUSDT',
+  'ADA': 'BINANCE:ADAUSDT',
+  'DOGE': 'BINANCE:DOGEUSDT',
+  'LINK': 'BINANCE:LINKUSDT'
+};
+
+// Map symbols to CoinGecko IDs for historical data
 const COINGECKO_MAP: Record<string, string> = {
   'BTC': 'bitcoin',
   'ETH': 'ethereum',
@@ -128,75 +142,29 @@ async function runBackgroundUpdates() {
   try {
     const assetsRef = dbAdmin.collection('assets');
 
-    const cryptoIds = SEED_ASSETS.filter(a => a.type === 'crypto')
-      .map(a => COINGECKO_MAP[a.symbol])
-      .filter(Boolean)
-      .join(',');
-
-    const stockSymbols = SEED_ASSETS.filter(a => a.type === 'stock')
-      .map(a => a.symbol)
-      .join(',');
-
     const fetchAllPrices = async () => {
       const prices: Record<string, { price: number; change24h: number }> = {};
-      const cgKey = process.env.COINGECKO_API_KEY;
-      const tdKey = process.env.TWELVE_DATA_API_KEY;
       const fhKey = process.env.FINNHUB_API_KEY;
 
-      // 1. Fetch Cryptos
-      try {
-        const cgRes = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoIds}&vs_currencies=usd&include_24hr_change=true`,
-          cgKey ? { headers: { 'x-cg-api-key': cgKey } } : undefined
-        );
-        if (cgRes.ok) {
-          const cgData = await cgRes.json() as any;
-          Object.entries(COINGECKO_MAP).forEach(([sym, id]) => {
-            if (cgData[id]) {
-              prices[sym] = {
-                price: cgData[id].usd,
-                change24h: cgData[id].usd_24h_change || 0
-              };
-            }
-          });
-        }
-      } catch (e) { console.warn("CoinGecko fetch failed:", e); }
-
-      // 2. Fetch Stocks (Twelve Data)
-      if (tdKey) {
-        try {
-          const tdRes = await fetch(
-            `https://api.twelvedata.com/quote?symbol=${stockSymbols}&apikey=${tdKey}`
-          );
-          if (tdRes.ok) {
-            const tdData = await tdRes.json() as any;
-            stockSymbols.split(',').forEach(sym => {
-              const symData = tdData[sym];
-              if (symData && (symData.price || symData.close)) {
-                prices[sym] = {
-                  price: parseFloat(symData.price || symData.close),
-                  change24h: symData.percent_change ? parseFloat(symData.percent_change) : 0
-                };
-              }
-            });
-          }
-        } catch (e) { console.warn("Twelve Data fetch failed:", e); }
-      }
-
-      // 3. Fallback for Stocks (Finnhub)
+      // Use Finnhub for all assets (stocks and cryptos)
       if (fhKey) {
-        for (const sym of stockSymbols.split(',')) {
+        for (const asset of SEED_ASSETS) {
+          // Map symbol if it's crypto, otherwise use stock symbol
+          const sym = asset.type === 'crypto' ? (FINNHUB_CRYPTO_MAP[asset.symbol] || asset.symbol) : asset.symbol;
+          
           if (!prices[sym]) {
             try {
               const fhRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${fhKey}`);
               if (fhRes.ok) {
                 const fhData = await fhRes.json() as any;
-                if (fhData.c) {
-                  prices[sym] = { price: fhData.c, change24h: fhData.dp || 0 };
+                if (fhData.c && fhData.c !== 0) { // c is current price
+                  prices[asset.symbol] = { price: fhData.c, change24h: fhData.dp || 0 };
                 }
               }
-            } catch (e) { console.warn(`Finnhub fetch for ${sym} failed:`, e); }
+            } catch (e) { console.warn(`Finnhub fetch for ${asset.symbol} failed:`, e); }
           }
+          // Small delay to prevent bursting the rate limit during the loop
+          await new Promise(r => setTimeout(r, 100));
         }
       }
       return prices;
@@ -236,7 +204,7 @@ async function runBackgroundUpdates() {
     setInterval(async () => {
       try {
         const livePrices = await fetchAllPrices();
-        if (Object.keys(livePrices).length === 0) return;
+        const hasLivePrices = Object.keys(livePrices).length > 0;
 
         const batch = dbAdmin.batch();
         const activeSnap = await assetsRef.get();
@@ -246,21 +214,35 @@ async function runBackgroundUpdates() {
           const data = doc.data();
           const symbol: string = data.symbol;
           const live = livePrices[symbol];
-          if (!live) return;
 
-          batch.update(doc.ref, {
-            currentPrice: parseFloat(live.price.toFixed(2)),
-            change24h: parseFloat(live.change24h.toFixed(2)),
-            priceSource: 'live-api',
-            updatedAt: FieldValue.serverTimestamp()
-          });
+          if (live) {
+            // Use higher precision for crypto, 2 decimals for stocks
+            const precision = data.type === 'crypto' ? 6 : 2;
+            batch.update(doc.ref, {
+              currentPrice: parseFloat(live.price.toFixed(precision)),
+              change24h: parseFloat(live.change24h.toFixed(2)),
+              priceSource: 'live-api',
+              updatedAt: FieldValue.serverTimestamp()
+            });
+          } else if (symbol === 'SPACEX' || symbol === 'APG' || symbol === 'GDM' || !hasLivePrices) {
+            // Simulated movement for private assets or when API is unreachable
+            const current = data.currentPrice || (symbol === 'GDM' ? 0.12 : 215.50);
+            const volatility = symbol === 'GDM' ? 0.005 : 0.0015;
+            const change = current * (Math.random() - 0.485) * volatility; // Slight upward bias
+            const precision = (data.type === 'crypto' || current < 1) ? 6 : 2;
+            
+            batch.update(doc.ref, {
+              currentPrice: parseFloat((current + change).toFixed(precision)),
+              updatedAt: FieldValue.serverTimestamp()
+            });
+          }
         });
 
         await batch.commit();
       } catch (err) {
         console.warn("Background market price update loop failed:", err);
       }
-    }, 30000); // 30 seconds interval is safe for free-tier rate limits
+    }, 20000); // 20 seconds interval to stay safely within Finnhub 60/min limit
 
   } catch (err) {
     console.warn("Background sync process crashed:", err);

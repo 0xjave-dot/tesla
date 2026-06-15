@@ -137,6 +137,17 @@ export default function App() {
         opacity: 1 !important;
         transform: translate(0, 0) !important;
       }
+
+      @keyframes ticker-scroll {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      .animate-ticker-slow {
+        animation: ticker-scroll 45s linear infinite;
+      }
+      .pause-animation:hover {
+        animation-play-state: paused;
+      }
     `}</style>
   ), []);
 

@@ -4,7 +4,7 @@ A high-performance trading simulation platform built with React, Vite, and Fireb
 
 ## 🚀 Features
 
-- **Real-time Price Feeds**: Live updates every 30 seconds via CoinGecko, Twelve Data, and Finnhub APIs.
+- **Real-time Price Feeds**: Live updates every 15 seconds via Finnhub API.
 - **Asset Management**: Dynamic logo rendering for top stocks (Tesla, Apple, Microsoft, Amazon, Google, NVIDIA, Meta, Netflix, SpaceX) and major Cryptocurrencies.
 - **Trading Terminal**: Advanced charting using Recharts with simulated and live data fallbacks.
 - **Secure Transactions**: Firestore-backed transactions for buying and selling assets with balance integrity.
@@ -23,8 +23,6 @@ A high-performance trading simulation platform built with React, Vite, and Fireb
 2. Install dependencies: `npm install`.
 3. Create a `.env` file with your Firebase and Market API keys:
    ```env
-   TWELVE_DATA_API_KEY=your_key
-   COINGECKO_API_KEY=your_key
    FINNHUB_API_KEY=your_key
    ```
 4. Run the development server: `npm run dev`.

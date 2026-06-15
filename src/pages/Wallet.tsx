@@ -266,6 +266,20 @@ export default function Wallet() {
                   </div>
                 </div>
 
+                {/* PAYMENT DESTINATION INFO */}
+                <div className="bg-navy-sidebar/50 border border-accent/20 rounded-2xl p-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                    <span className="text-[10px] uppercase font-bold text-white/50 tracking-widest">Transfer Destination ({depMethod})</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-navy-base rounded-xl px-4 py-3 border border-white/[0.05]">
+                    <code className="text-xs font-mono text-accent select-all">
+                      {depMethod === 'BTC' ? '1BYm9Q1Tz1eDJLDwbvAp61c9pvNXvM2ecQ' : 'teslainvest@gmail.com'}
+                    </code>
+                    <span className="text-[9px] text-white/30 font-bold uppercase tracking-tighter">Official Receiver</span>
+                  </div>
+                </div>
+
                 <div className="bg-accent/5 border border-accent/20 rounded-2xl p-4 text-xs text-white/60 flex items-start gap-3">
                   <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
