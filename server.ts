@@ -431,12 +431,16 @@ async function startServer() {
     });
     app.use(vite.middlewares);
 
-    // SPA fallback for development mode: Transform and serve index.html
-    app.get('*', async (req, res, next) => {
-      if (req.originalUrl.startsWith('/api')) return next();
+    // SPA fallback for development mode: Transform and serve index.html for non-API requests
+    app.use('*', async (req, res, next) => {
       const url = req.originalUrl;
+      if (url.startsWith('/api')) return next();
+      
       try {
-        let template = fs.readFileSync(path.resolve(process.cwd(), 'index.html'), 'utf-8');
+        const indexPath = path.resolve(process.cwd(), 'index.html');
+        if (!fs.existsSync(indexPath)) return next();
+
+        let template = fs.readFileSync(indexPath, 'utf-8');
         template = await vite.transformIndexHtml(url, template);
         res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
       } catch (e) {
@@ -447,7 +451,12 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
+
+    // Production fallback: Send index.html for all non-API and non-file requests
     app.get('*', (req, res) => {
+      if (req.originalUrl.startsWith('/api')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
