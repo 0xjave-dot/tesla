@@ -211,68 +211,13 @@ export default function MarketDetail() {
           return;
         }
       } catch (e) {
-        console.warn("Real-time proxy failed to reach historical records. Activating simulation fallback...", e);
+        console.warn("Real-time proxy failed to reach historical records.", e);
       }
 
-      // Safe backup seed / simulated fallback loop
-      if (!active) return;
-      
-      const items = [];
-      let ticks = 60;
-      let volatilityMultiplier = 1;
-      let formatLabel = (i: number) => `t-${i}`;
-
-      if (timeTab === '1H') {
-        ticks = 15;
-        volatilityMultiplier = 0.5;
-        formatLabel = (i: number) => `${(ticks - 1 - i) * 4}m ago`;
-      } else if (timeTab === '1D') {
-        ticks = 30;
-        formatLabel = (i: number) => `${ticks - 1 - i}h ago`;
-      } else if (timeTab === '1W') {
-        ticks = 40;
-        volatilityMultiplier = 2;
-        formatLabel = (i: number) => `Day ${Math.floor(i / 5) + 1}`;
-      } else if (timeTab === '1M') {
-        ticks = 60;
-        volatilityMultiplier = 4;
-        formatLabel = (i: number) => `D-${ticks - 1 - i}`;
+      if (active) {
+        setChartData([]);
+        setChartLoading(false);
       }
-
-      let lastClose = activePrice * (0.98 + Math.random() * 0.04);
-      
-      for (let i = 0; i < ticks; i++) {
-        const volatility = 0.004 * volatilityMultiplier;
-        const drift = 0.0002;
-        
-        const open = lastClose;
-        const close = open + open * ((Math.random() - 0.48) * volatility + drift);
-        const high = Math.max(open, close) + (Math.random() * open * 0.002);
-        const low = Math.min(open, close) - (Math.random() * open * 0.002);
-        
-        items.push({
-          time: formatLabel(i),
-          open: parseFloat(open.toFixed(2)),
-          high: parseFloat(high.toFixed(2)),
-          low: parseFloat(low.toFixed(2)),
-          close: parseFloat(close.toFixed(2)),
-          price: parseFloat(close.toFixed(2)) // for line fallback
-        });
-        lastClose = close;
-      }
-
-      if (items.length > 0) {
-        const last = items[items.length - 1];
-        items[items.length - 1] = {
-          ...last,
-          time: 'Now',
-          close: parseFloat(activePrice.toFixed(2)),
-          price: parseFloat(activePrice.toFixed(2))
-        };
-      }
-
-      setChartData(items);
-      setChartLoading(false);
     };
 
     fetchHistory();
@@ -383,8 +328,11 @@ export default function MarketDetail() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-2xl font-medium tracking-tight text-white">{asset.symbol}</h3>
-                  <div className="w-2 h-2 rounded-full bg-gain animate-pulse" />
-                  <span className="text-[9px] text-white/30 font-semibold uppercase tracking-wider">Live streaming</span>
+                  <div className={`w-2 h-2 rounded-full ${asset.priceSource === 'live-api' ? 'bg-gain animate-pulse' : 'bg-yellow-500'}`} />
+                  <span className="text-[9px] text-white/30 font-semibold uppercase tracking-wider">
+                    {asset.priceSource === 'live-api' ? 'Live market feed' : 
+                     asset.priceSource === 'simulated' ? 'Simulated asset' : 'Simulation fallback'}
+                  </span>
                 </div>
                 <span className="text-white/50 text-xs block">{asset.name}</span>
               </div>

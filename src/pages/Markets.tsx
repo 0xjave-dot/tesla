@@ -191,7 +191,14 @@ export default function Markets() {
                         )}
                       </div>
                       <div>
-                        <span className="text-xs text-white/40 block leading-tight hidden sm:block">{asset.name}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-white/40 block leading-tight hidden sm:block">{asset.name}</span>
+                          {asset.priceSource === 'live-api' ? (
+                            <span className="text-[8px] bg-gain/10 text-gain px-1 rounded uppercase font-bold">Live</span>
+                          ) : (
+                            <span className="text-[8px] bg-yellow-500/10 text-yellow-500 px-1 rounded uppercase font-bold">Sim</span>
+                          )}
+                        </div>
                         <span className="text-sm font-semibold tracking-tight text-white block sm:mt-0.5 group-hover:text-accent transition duration-150">
                           {asset.symbol}
                         </span>

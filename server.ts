@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue, Firestore } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
 
@@ -40,6 +40,17 @@ function getFirebaseProjectId(): string {
   return 'mineral-ground-rcf5x';
 }
 
+// Helper to find a service account file in the root directory
+function getAutoDetectedServiceAccount(): string | null {
+  try {
+    const files = fs.readdirSync(process.cwd());
+    const match = files.find(f => f.endsWith('.json') && f.includes('firebase-adminsdk'));
+    return match ? path.join(process.cwd(), match) : null;
+  } catch {
+    return null;
+  }
+}
+
 // API route health checks
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
@@ -53,7 +64,8 @@ function hasFirebaseAdminCredentials(): boolean {
   return Boolean(
     process.env.GOOGLE_APPLICATION_CREDENTIALS ||
     process.env.FIREBASE_ADMIN_CREDENTIALS ||
-    process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON
+    process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON ||
+    getAutoDetectedServiceAccount()
   );
 }
 
@@ -68,10 +80,29 @@ function getFirestoreAdmin() {
       const apps = getApps();
       if (apps.length === 0) {
         const projectId = getFirebaseProjectId();
-        console.log(`Initializing Firebase Admin for project: ${projectId}`);
-        firebaseAdminApp = initializeApp({
-          projectId: projectId
-        });
+        
+        const adminCreds = process.env.FIREBASE_ADMIN_CREDENTIALS || process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+        const options: any = { projectId };
+
+        if (adminCreds) {
+          try {
+            const serviceAccount = JSON.parse(adminCreds);
+            options.credential = cert(serviceAccount);
+            console.log(`Initializing Firebase Admin with provided JSON credentials for project: ${projectId}`);
+          } catch (e) {
+            console.warn("FIREBASE_ADMIN_CREDENTIALS found but failed to parse as JSON. Falling back to default.");
+          }
+        } else if (getAutoDetectedServiceAccount()) {
+          const filePath = getAutoDetectedServiceAccount()!;
+          console.log(`Initializing Firebase Admin using auto-detected file: ${path.basename(filePath)}`);
+          options.credential = cert(filePath);
+        } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+          console.log(`Initializing Firebase Admin using file path: ${process.env.GOOGLE_APPLICATION_CREDENTIALS}`);
+        } else {
+          console.warn("Using default Firebase Admin initialization (requires environment-level auth).");
+        }
+
+        firebaseAdminApp = initializeApp(options);
       } else {
         firebaseAdminApp = apps[0]!;
       }
@@ -144,28 +175,54 @@ async function runBackgroundUpdates() {
 
     const fetchAllPrices = async () => {
       const prices: Record<string, { price: number; change24h: number }> = {};
-      const fhKey = process.env.FINNHUB_API_KEY;
 
-      // Use Finnhub for all assets (stocks and cryptos)
-      if (fhKey) {
-        for (const asset of SEED_ASSETS) {
-          // Map symbol if it's crypto, otherwise use stock symbol
-          const sym = asset.type === 'crypto' ? (FINNHUB_CRYPTO_MAP[asset.symbol] || asset.symbol) : asset.symbol;
-          
-          if (!prices[sym]) {
-            try {
-              const fhRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${fhKey}`);
-              if (fhRes.ok) {
-                const fhData = await fhRes.json() as any;
-                if (fhData.c && fhData.c !== 0) { // c is current price
-                  prices[asset.symbol] = { price: fhData.c, change24h: fhData.dp || 0 };
-                }
-              }
-            } catch (e) { console.warn(`Finnhub fetch for ${asset.symbol} failed:`, e); }
+      // 1. CRYPTO: CoinGecko simple/price (one call, all coins, free)
+      const cryptoAssets = SEED_ASSETS.filter(a => a.type === 'crypto' && COINGECKO_MAP[a.symbol]);
+      const coinIds = cryptoAssets.map(a => COINGECKO_MAP[a.symbol]).join(',');
+      
+      if (cryptoAssets.length > 0) {
+        console.log(`Attempting to fetch real-time crypto prices for: ${coinIds}`);
+      }
+
+      try {
+        const cgRes = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${coinIds}&vs_currencies=usd&include_24hr_change=true`
+        );
+        if (cgRes.ok) {
+          const cgData = await cgRes.json() as any;
+          for (const asset of cryptoAssets) {
+            const coinId = COINGECKO_MAP[asset.symbol];
+            const d = cgData[coinId];
+            if (d?.usd) {
+              prices[asset.symbol] = { price: d.usd, change24h: parseFloat((d.usd_24h_change || 0).toFixed(2)) };
+            }
           }
-          // Small delay to prevent bursting the rate limit during the loop
-          await new Promise(r => setTimeout(r, 100));
         }
+      } catch (e) { console.warn('CoinGecko simple/price fetch failed:', e); }
+
+      // 2. STOCKS: Finnhub /quote (only for stocks, excluding simulated ones)
+      const fhKey = process.env.FINNHUB_API_KEY;
+      const stockAssets = SEED_ASSETS.filter(
+        a => a.type === 'stock' && !['SPACEX', 'APG', 'GDM'].includes(a.symbol)
+      );
+
+      if (fhKey) {
+        console.log(`Attempting to fetch real-time stock quotes for ${stockAssets.length} assets via Finnhub.`);
+        for (const asset of stockAssets) {
+          try {
+            const fhRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${asset.symbol}&token=${fhKey}`);
+            if (fhRes.ok) {
+              const fhData = await fhRes.json() as any;
+              if (fhData.c && fhData.c > 0) {
+                prices[asset.symbol] = { price: fhData.c, change24h: parseFloat((fhData.dp || 0).toFixed(2)) };
+              }
+            }
+          } catch (e) { console.warn(`Finnhub fetch for ${asset.symbol} failed:`, e); }
+          // Delay to stay safely within Finnhub 60/min limit
+          await new Promise(r => setTimeout(r, 250));
+        }
+      } else {
+        console.warn("FINNHUB_API_KEY is missing. Stock price updates will be skipped.");
       }
       return prices;
     };
@@ -175,29 +232,29 @@ async function runBackgroundUpdates() {
     if (snap.empty) {
       console.log("Assets database is blank. Seeding live market data...");
       const livePrices = await fetchAllPrices();
+      const batch = dbAdmin.batch();
 
-      if (Object.keys(livePrices).length > 0) {
-        for (const asset of SEED_ASSETS) {
-          const current = livePrices[asset.symbol];
-          if (current) {
-            await assetsRef.doc(asset.symbol).set({
-              symbol: asset.symbol,
-              name: asset.name,
-              type: asset.type,
-              logoUrl: asset.logoUrl,
-              currentPrice: current.price,
-              change24h: current.change24h,
-              priceSource: 'live-api',
-              updatedAt: FieldValue.serverTimestamp()
-            });
-          } else {
-            console.log(`No live quote available for ${asset.symbol} during initial seed.`);
-          }
-        }
-        console.log("Assets collection seeded with live market quotes.");
-      } else {
-        console.log("No live market quotes available for initial asset seed. Assets collection remains empty.");
+      for (const asset of SEED_ASSETS) {
+        const live = livePrices[asset.symbol];
+        
+        // Determine a fallback price if API fails (SpaceX/GDM specific vs default)
+        const initialPrice = live ? live.price : (asset.symbol === 'SPACEX' ? 215.50 : (asset.symbol === 'GDM' ? 0.12 : 150.00));
+        const initialChange = live ? live.change24h : 0;
+
+        const docRef = assetsRef.doc(asset.symbol);
+        batch.set(docRef, {
+          symbol: asset.symbol,
+          name: asset.name,
+          type: asset.type,
+          logoUrl: asset.logoUrl,
+          currentPrice: initialPrice,
+          change24h: initialChange,
+          priceSource: live ? 'live-api' : 'initial-seed',
+          updatedAt: FieldValue.serverTimestamp()
+        });
       }
+      await batch.commit();
+      console.log(`Assets collection seeded with ${SEED_ASSETS.length} assets.`);
     }
 
     // Interval to fetch LIVE quotes and update Firebase
@@ -214,9 +271,9 @@ async function runBackgroundUpdates() {
           const data = doc.data();
           const symbol: string = data.symbol;
           const live = livePrices[symbol];
+          const isSimulatedAsset = ['SPACEX', 'APG', 'GDM'].includes(symbol);
 
           if (live) {
-            // Use higher precision for crypto, 2 decimals for stocks
             const precision = data.type === 'crypto' ? 6 : 2;
             batch.update(doc.ref, {
               currentPrice: parseFloat(live.price.toFixed(precision)),
@@ -224,18 +281,22 @@ async function runBackgroundUpdates() {
               priceSource: 'live-api',
               updatedAt: FieldValue.serverTimestamp()
             });
-          } else if (symbol === 'SPACEX' || symbol === 'APG' || symbol === 'GDM' || !hasLivePrices) {
+          } else if (isSimulatedAsset || !hasLivePrices) {
             // Simulated movement for private assets or when API is unreachable
-            const current = data.currentPrice || (symbol === 'GDM' ? 0.12 : 215.50);
-            const volatility = symbol === 'GDM' ? 0.005 : 0.0015;
-            const change = current * (Math.random() - 0.485) * volatility; // Slight upward bias
-            const precision = (data.type === 'crypto' || current < 1) ? 6 : 2;
-            
-            batch.update(doc.ref, {
-              currentPrice: parseFloat((current + change).toFixed(precision)),
-              updatedAt: FieldValue.serverTimestamp()
-            });
+            const current = data.currentPrice;
+            if (current) {
+              const volatility = symbol === 'GDM' ? 0.005 : 0.0015;
+              const change = current * (Math.random() - 0.485) * volatility;
+              const precision = (data.type === 'crypto' || current < 1) ? 6 : 2;
+              
+              batch.update(doc.ref, {
+                currentPrice: parseFloat((current + change).toFixed(precision)),
+                priceSource: isSimulatedAsset ? 'simulated' : 'api-fallback',
+                updatedAt: FieldValue.serverTimestamp()
+              });
+            }
           }
+          // Otherwise skip update to keep last known price
         });
 
         await batch.commit();
@@ -430,8 +491,8 @@ async function startServer() {
       appType: 'spa',
     });
     app.use(vite.middlewares);
-
-n    // SPA fallback for development mode: catch-all for navigation requests
+    
+    // SPA fallback for development mode: catch-all for navigation requests
     app.get('*', async (req, res, next) => {
       const url = req.originalUrl;
 
