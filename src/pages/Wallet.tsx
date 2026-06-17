@@ -34,7 +34,7 @@ export default function Wallet() {
   // Deposit state
   const [depAmount, setDepAmount] = useState('');
   const [depNote, setDepNote] = useState('');
-  const [depMethod, setDepMethod] = useState<'BTC' | 'PayPal' | 'Venmo'>('BTC');
+  const [depMethod, setDepMethod] = useState<'BTC' | 'PayPal' | 'Venmo' | 'USDT' | 'Ethereum'>('BTC');
   
   // Withdraw state
   const [withAmount, setWithAmount] = useState('');
@@ -244,7 +244,11 @@ export default function Wallet() {
                           ? 'Enter BTC tx hash or your BTC wallet address' 
                           : depMethod === 'PayPal' 
                             ? 'Enter your PayPal email or transaction ID'
-                            : 'Enter your Venmo username or transaction ID'
+                            : depMethod === 'Venmo'
+                              ? 'Enter your Venmo username or transaction ID'
+                              : depMethod === 'USDT'
+                                ? 'Enter your USDT transaction hash or wallet address'
+                                : 'Enter your Ethereum transaction hash or wallet address'
                       }
                       className="w-full bg-navy-sidebar border border-white/[0.1] rounded-xl px-4 py-3 text-xs text-white placeholder-white/35 focus:outline-none focus:border-accent"
                     />
@@ -253,7 +257,7 @@ export default function Wallet() {
 
                 <div className="flex gap-3 items-center">
                   <label className="text-[10px] uppercase font-bold text-white/50 tracking-wider pl-0.5 mb-2">Deposit Method</label>
-                  <div className="flex items-center gap-3 ml-2">
+                  <div className="flex items-center gap-3 ml-2 flex-wrap">
                     <label className={`text-xs cursor-pointer ${depMethod === 'BTC' ? 'font-semibold text-white' : 'text-white/50'}`}>
                       <input type="radio" name="depMethod" value="BTC" checked={depMethod === 'BTC'} onChange={() => setDepMethod('BTC')} className="mr-2" />BTC
                     </label>
@@ -262,6 +266,12 @@ export default function Wallet() {
                     </label>
                     <label className={`text-xs cursor-pointer ${depMethod === 'Venmo' ? 'font-semibold text-white' : 'text-white/50'}`}>
                       <input type="radio" name="depMethod" value="Venmo" checked={depMethod === 'Venmo'} onChange={() => setDepMethod('Venmo')} className="mr-2" />Venmo
+                    </label>
+                    <label className={`text-xs cursor-pointer ${depMethod === 'USDT' ? 'font-semibold text-white' : 'text-white/50'}`}>
+                      <input type="radio" name="depMethod" value="USDT" checked={depMethod === 'USDT'} onChange={() => setDepMethod('USDT')} className="mr-2" />USDT (ERC-20)
+                    </label>
+                    <label className={`text-xs cursor-pointer ${depMethod === 'Ethereum' ? 'font-semibold text-white' : 'text-white/50'}`}>
+                      <input type="radio" name="depMethod" value="Ethereum" checked={depMethod === 'Ethereum'} onChange={() => setDepMethod('Ethereum')} className="mr-2" />Ethereum
                     </label>
                   </div>
                 </div>
@@ -274,7 +284,14 @@ export default function Wallet() {
                   </div>
                   <div className="flex items-center justify-between bg-navy-base rounded-xl px-4 py-3 border border-white/[0.05]">
                     <code className="text-xs font-mono text-accent select-all">
-                      {depMethod === 'BTC' ? '1BYm9Q1Tz1eDJLDwbvAp61c9pvNXvM2ecQ' : 'teslainvest@gmail.com'}
+                      {depMethod === 'BTC' 
+                        ? '1BYm9Q1Tz1eDJLDwbvAp61c9pvNXvM2ecQ' 
+                        : depMethod === 'USDT'
+                          ? '0x81f28Aa6cF45F54aa28c534f21552230911fE093'
+                          : depMethod === 'Ethereum'
+                            ? '0x81f28Aa6cF45F54aa28c534f21552230911fE093'
+                            : 'teslainvest@gmail.com'
+                      }
                     </code>
                     <span className="text-[9px] text-white/30 font-bold uppercase tracking-tighter">Official Receiver</span>
                   </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import FloatingSupport from '../common/FloatingSupport';
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,6 +28,9 @@ export default function AdminLayout() {
           </div>
         </main>
       </div>
+
+      {/* Floating Support Button */}
+      <FloatingSupport />
     </div>
   );
 }

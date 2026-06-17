@@ -10,4 +10,8 @@ dist/
 .env.*.local
 
 # Logs
-*.loglass-96522-firebase-adminsdk-fbsvc-b467257cd5.json
+*.log
+
+# Firebase credentials
+lass-96522-firebase-adminsdk-fbsvc-b467257cd5.json
+*firebase-adminsdk*.json
