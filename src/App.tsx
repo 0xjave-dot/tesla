@@ -25,6 +25,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminUserDetail from './pages/admin/AdminUserDetail';
 import AdminTransactions from './pages/admin/AdminTransactions';
+import DbAdmin from './pages/admin/DbAdmin';
 
 // Protective Wrapper for authenticated users
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -177,6 +178,9 @@ export default function App() {
         <Route path="users/:uid" element={<AdminUserDetail />} />
         <Route path="transactions" element={<AdminTransactions />} />
       </Route>
+
+      {/* Standalone Simple DB Firestore Admin Panel */}
+      <Route path="/db-admin" element={<DbAdmin />} />
 
       {/* Fallback routing */}
       <Route path="*" element={<Navigate to="/" replace />} />

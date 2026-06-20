@@ -10,7 +10,8 @@ import {
   LogOut,
   Users,
   CreditCard,
-  ChevronRight
+  ChevronRight,
+  Database
 } from 'lucide-react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -208,6 +209,14 @@ export default function Sidebar({ isAdminView = false, isOpen = false, onClose }
             </span>
           </div>
         </div>
+
+        <NavLink
+          to="/db-admin"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-white/40 hover:text-white hover:bg-white/5 transition group cursor-pointer"
+        >
+          <Database className="w-4 h-4 text-white/30 group-hover:text-accent transition" />
+          <span>DB Console</span>
+        </NavLink>
 
         <button
           onClick={handleLogout}

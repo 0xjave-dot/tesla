@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Only seed if collection is empty
       if (assetsSnap.empty) {
-        const SEED_ASSETS: Omit<Asset, 'currentPrice' | 'change24h' | 'priceSource'>[] = [
+        const SEED_ASSETS: Omit<Asset, 'currentPrice' | 'change24h' | 'priceSource' | 'updatedAt'>[] = [
           { symbol: 'TSLA', name: 'Tesla Motor, Inc.', type: 'stock' },
           { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock' },
           { symbol: 'MSFT', name: 'Microsoft Corporation', type: 'stock' },
