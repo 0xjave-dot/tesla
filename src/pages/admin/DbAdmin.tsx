@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { db } from '../../lib/firebase';
+import { auth } from '../../lib/firebase';
+import { signInAnonymously, signOut as firebaseSignOut } from 'firebase/auth';
 import { 
   collection, 
   doc, 
@@ -74,22 +76,49 @@ export default function DbAdmin() {
   const [adminNote, setAdminNote] = useState('');
   const [txActionLoading, setTxActionLoading] = useState(false);
 
-  // Handle password submit
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password === 'Teslastock2026!') {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('db_console_authed', 'true');
-      setPasswordError('');
+      try {
+        // Obtain a Firebase auth token so Firestore security rules allow access.
+        // We use anonymous sign-in because the DB console has its own password layer.
+        if (!auth.currentUser) {
+          await signInAnonymously(auth);
+        }
+        setIsAuthenticated(true);
+        sessionStorage.setItem('db_console_authed', 'true');
+        setPasswordError('');
+      } catch (err: any) {
+        console.error('Anonymous Firebase auth failed in DB console:', err);
+        setPasswordError('Authentication setup failed: ' + (err.message || 'Please try again.'));
+      }
     } else {
       setPasswordError('Invalid console access password.');
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsAuthenticated(false);
     sessionStorage.removeItem('db_console_authed');
+    // Sign out only if we signed in anonymously (don't disturb real admin sessions)
+    if (auth.currentUser?.isAnonymous) {
+      try { await firebaseSignOut(auth); } catch {}
+    }
   };
+
+  // When the page reloads with a stored session, re-establish Firebase anonymous auth
+  // so Firestore queries have a valid auth token.
+  useEffect(() => {
+    if (isAuthenticated && !auth.currentUser) {
+      signInAnonymously(auth).catch((err) => {
+        console.warn('Could not restore anonymous session for DB console:', err);
+        // Reset if we can't get a Firebase token (console would be empty anyway)
+        setIsAuthenticated(false);
+        sessionStorage.removeItem('db_console_authed');
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Subscriptions to documents in selected collection
   useEffect(() => {

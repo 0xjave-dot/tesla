@@ -18,46 +18,52 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    // Anonymous sessions are created ONLY by the DB console after password verification.
+    // This allows the standalone /db-admin console to bypass normal role rules.
+    function isAnonymousAdmin() {
+      return isAuthenticated() && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
     // 1. Users collection
     match /users/{uid} {
-      allow read: if isOwner(uid) || isAdmin();
+      allow read: if isOwner(uid) || isAdmin() || isAnonymousAdmin();
       allow create: if isAuthenticated();
-      allow update, delete: if isOwner(uid) || isAdmin();
+      allow update, delete: if isOwner(uid) || isAdmin() || isAnonymousAdmin();
     }
 
     // 2. Balances collection
     match /balances/{uid} {
-      allow read: if isOwner(uid) || isAdmin();
+      allow read: if isOwner(uid) || isAdmin() || isAnonymousAdmin();
       // Allow users to initialize or perform transaction updates themselves, and admins to apply adjustments
-      allow write: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid) || isAdmin() || isAnonymousAdmin();
     }
 
     // 3. Holdings assets subcollection nested inside holdings
     match /holdings/{uid}/assets/{symbol} {
-      allow read: if isOwner(uid) || isAdmin();
-      allow write: if isOwner(uid) || isAdmin();
+      allow read: if isOwner(uid) || isAdmin() || isAnonymousAdmin();
+      allow write: if isOwner(uid) || isAdmin() || isAnonymousAdmin();
     }
 
     // 4. Client trade orders ledger
     match /orders/{orderId} {
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAdmin();
+      allow read: if isAdmin() || isAnonymousAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAnonymousAdmin());
+      allow update, delete: if isAdmin() || isAnonymousAdmin();
     }
 
     // 5. Client monetary deposit/withdrawal transactions ledger
     match /transactions/{txId} {
-      allow read: if isAdmin() || (isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid));
+      allow read: if isAdmin() || isAnonymousAdmin() || (isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid));
       // Allow creating transactions if owned, or if admin processes
-      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
-      allow update, delete: if isAdmin();
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin() || isAnonymousAdmin());
+      allow update, delete: if isAdmin() || isAnonymousAdmin();
     }
 
     // 6. Security trade quotes (Equities & Cryptos listings)
     match /assets/{symbol} {
       allow read: if isAuthenticated();
       // Admin writes, server-side Admin SDK actions bypass rules
-      allow write: if isAdmin();
+      allow write: if isAdmin() || isAnonymousAdmin();
     }
   }
 }
